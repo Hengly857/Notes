@@ -35,5 +35,4 @@ XSSFColor customColor = new XSSFColor(new byte[] {alpha, red, green, blue});
 frameStyle.setFillForegroundColor(new XSSFColor(new byte[] {(byte)255, (byte)220, (byte)230, (byte)241}));
 ```
 
-### 使用RegionUtil类为合并后的单元格添加边框
-RegionUtil.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN, cellRangeAddress, sheet);
+### 更新word的更新域

@@ -34,5 +34,30 @@ CellRangeAddress(起始行号，终止行号， 起始列号，终止列号）
 XSSFColor customColor = new XSSFColor(new byte[] {alpha, red, green, blue});
 frameStyle.setFillForegroundColor(new XSSFColor(new byte[] {(byte)255, (byte)220, (byte)230, (byte)241}));
 ```
+### 增加安全设备sheet表
 
-### 更新word的更新域
+### 根据模板生成的word目录自动更新
+使用Apache POI生成Word文档时，会遇到目录（TOC, Table of Contents）需要手动更新的问题。这是因为Word中的目录是基于特定的样式（如Heading 1, Heading 2等）自动生成的，
+而这些样式在文档中被标记为域代码。当文档内容发生变化时，这些域代码不会自动更新，因此需要用户手动点击“更新目录”按钮来刷新。
+、、、
+try (OPCPackage opcPackage = OPCPackage.open(outputFilename);
+    XWPFDocument fs = new XWPFDocument(opcPackage)) {
+ 
+    List<XWPFParagraph> paragraphs = fs.getParagraphs();
+        for (XWPFParagraph paragraph : paragraphs) {
+            if (paragraph.getCTP().getFldSimpleList() != null && !paragraph.getCTP().getFldSimpleList().isEmpty()) {
+            for (org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSimpleField field : paragraph.getCTP().getFldSimpleList()) {
+                if ("TOC".equals(field.getInstr())) {
+                    field.setDirty(true); // 设置为需要更新
+                    log.debug("Marked TOC field as dirty");
+                }
+            }
+    }
+}
+ 
+    // 强制更新整个文档的所有域
+    fs.enforceUpdateFields();
+、、、
+
+### 适配邮件类型 对于邮件类型的excel增加收件箱
+

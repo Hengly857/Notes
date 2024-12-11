@@ -1,5 +1,20 @@
 # 记录Apach POI开源组件开发笔记
+```
+配置文件修改
+修改对应的服务 IP 地址
+外部服务：
+ElasticSearch 日志检索
+MongoDB 内容包存储
+kafka 许可证消息队列
+nacos 本脑服务注册，用于HA
 
+AES 其他服务组件
+data_api 数据库访问接口
+report_engine 报告引擎
+phish_server 钓鱼邮件
+cloud_config 云端攻击服务
+local_cloud_config 本地攻击服务
+```
 # 1. 命令行调用报告引擎，将上述参数传递保存在本地mongodb中，并且生成一个id,将id传递给报告引擎
 # 2. 报告引擎带着上述id，调用 serverX的get_report_data的接口，拿到接口数据，可以将报告存放的路径也放在返回数据中
 # 3. 报告引擎生成报告，并且报告生成结果给serverX
@@ -42,7 +57,6 @@ frameStyle.setFillForegroundColor(new XSSFColor(new byte[] {(byte)255, (byte)220
 、、、
 try (OPCPackage opcPackage = OPCPackage.open(outputFilename);
     XWPFDocument fs = new XWPFDocument(opcPackage)) {
- 
     List<XWPFParagraph> paragraphs = fs.getParagraphs();
         for (XWPFParagraph paragraph : paragraphs) {
             if (paragraph.getCTP().getFldSimpleList() != null && !paragraph.getCTP().getFldSimpleList().isEmpty()) {
@@ -54,10 +68,31 @@ try (OPCPackage opcPackage = OPCPackage.open(outputFilename);
             }
     }
 }
- 
     // 强制更新整个文档的所有域
     fs.enforceUpdateFields();
 、、、
 
 ### 适配邮件类型 对于邮件类型的excel增加收件箱
 
+### Linux环境下 如何稳定的监控指定进程的所有执行信息（包含子进程的、需要的权限资源越少越好）
+
+### 基于现在的word文档生成pdf文档
+方案1 itexpdf 生成 pdf（word生成是依靠 文本替换的占位符 生成）pdf希望依靠 基于表单字段创建的
+结论：无法动态生成 pass
+
+方案2 将使用FreeMarker作为模板引擎，并结合Flying Saucer（XHTMLRenderer）库来转换html文件生成PDF文件。
+参考网站 https://blog.csdn.net/weixin_41701290/article/details/140714976
+模板引擎是一种用于生成动态内容的类库（或框架），通过将预定义的模板与特定数据合并，来生成最终的输出。
+
+首先就是提供现成的模板文件语法和解析能力。开发者只要按照特定要求去编写模板文件，
+比如使用 ${参数} 语法，模板引擎就能自动将参数注入到模板中，得到完整文件，不用再自己编写解析逻辑了。
+其次，模板引擎可以将数据和模板分离，让不同的开发人员独立工作。比如后端专心开发业务逻辑提供数据，前端专心写模板等，让系统更易于维护。
+使用 知名的、稳定的经典模板引擎 FreeMarker。
+FreeMarker 官方文档： https://freemarker.apache.org/docs/index.html
+
+在html转换成pdf的过程需要考虑一下多种方案
+1.Flying Saucer（XHTMLRenderer）库 似乎生成图片有问题
+2.目前使用itexpdf {
+    生成html无法显示图片 因为路径问题
+    html转换成pdf 会导致页面空白
+}

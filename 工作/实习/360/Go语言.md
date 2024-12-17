@@ -1,1 +1,2 @@
-audit.go 和 netlink.go 是两个可能与Linux审计系统和Netlink通信机制相关的Go语言源代码文件。
+## 基本使用
+加载依赖 go mod tidy

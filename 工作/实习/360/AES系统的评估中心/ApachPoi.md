@@ -1,4 +1,5 @@
-# 记录Apach POI开源组件开发笔记
+# 三六零安全科技股份有限公司/数字安全集团/安全大脑事业部
+## 记录Apach POI开源组件开发笔记
 ```
 配置文件修改
 修改对应的服务 IP 地址
@@ -96,3 +97,8 @@ FreeMarker 官方文档： https://freemarker.apache.org/docs/index.html
     生成html无法显示图片 因为路径问题
     html转换成pdf 会导致页面空白
 }
+wkhtmltopdf
+优点：
+支持完整的 HTML5 和 CSS3
+渲染效果最接近浏览器
+中文支持很好

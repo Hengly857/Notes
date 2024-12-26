@@ -1,50 +1,28 @@
 # api分权
 权限划分，是指在一个系统中将不同级别的访问权限分配给不同的用户或角色，以确保每个用户只能访问他们被授权使用的资源和服务。
 对于Go项目中的API进行分权有着重要的意义，它不仅有助于保护系统的安全性和隐私性，还能提高系统的可管理性和可靠性。
-分权过程是 在 header请求头加入 organization_id_path 然后在api调用过程中进行验证
-controllers/api/server.go
+orgnization_id(多个用户) 对应 api_key
+在serverX上改 进行分权 不要在开源组件上改
+主要改动说明:
+创建了FishingTenant模型来存储租户配置
+FishingApiManager不再在初始化时创建phish_server,而是按需创建
+增加了租户管理的API接口
+每个请求都需要携带organization_id
+根据organization_id动态获取对应的phish_server实例
+你需要:
+确定如何从请求中获取organization_id(可能来自认证token或请求头等)
+实现租户管理的接口权限控制
+添加租户配置的验证逻辑
+考虑是否需要缓存phish_server实例以提高性能
 
-1.仿照 data_api router.api
-2.在aes.db表里面插入organization_id_path
-
-```
-func HandlerFuncBefore(f func(http.ResponseWriter, *http.Request, *base.AuthInfo)) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		authInfo := base.AuthInfo{OrganizationIdPath: []string{}}
-		if r.Header.Get(base.HEADER_ORGIN_ID_KEY) != "" {
-			authInfo.OrganizationIdPath = r.Header.Values(base.HEADER_ORGIN_ID_KEY)
-			if len(authInfo.OrganizationIdPath) > 0 {
-				orgIdWhere := []string{}
-				orgIdArgs := []interface{}{}
-				for _, orgId := range authInfo.OrganizationIdPath {
-					orgIdArr := strings.Split(orgId, ",")
-					for _, orgId := range orgIdArr {
-						orgIdWhere = append(orgIdWhere, "organization_id_path like ?")
-						orgIdArgs = append(orgIdArgs, "%"+orgId+"%")
-					}
-				}
-				authInfo.OrganizationIdWhere = "( " + strings.Join(orgIdWhere, " or ") + " )"
-				authInfo.OrganizationIdArgs = orgIdArgs
-				authInfo.OrganizationIdAnd = " and "
-			}
-		}
-
-		f(w, r, &authInfo)
-	}
-}
-```
-HandlerFuncBefore 函数是一个Go语言中的高阶函数，它接收一个接受三个参数的函数 f 作为输入，并返回一个新的HTTP处理函数。
-这个新的处理函数在调用 f 之前会先进行一些预处理工作，特别是围绕认证信息（authInfo）的构建10。
-HandlerFuncBefore 分析
-输入参数
-f: 这是一个函数类型，它接收三个参数：http.ResponseWriter, *http.Request, 和 *base.AuthInfo。
-这里的 base.AuthInfo 是一个自定义结构体，用于携带与认证相关的信息，例如组织ID路径等。
-返回值
-返回的是一个符合 http.HandlerFunc 签名的函数，即它接收两个参数 http.ResponseWriter 和 *http.Request 并返回 nil。
-这种模式允许我们将额外的逻辑包装到现有的HTTP处理器中，而不需要修改原有的处理器代码。
-初始化 authInfo: 创建了一个空的 base.AuthInfo 实例。
-检查请求头：从HTTP请求头中查找特定键 HEADER_ORGIN_ID_KEY 的值。如果存在该键，则继续下一步；否则，使用默认值。
-解析组织ID路径：将找到的组织ID字符串分割成数组，并进一步拆分为更小的部分（如果有逗号分隔）。对于每个部分，构造SQL查询条件和参数列表。
-设置 authInfo 属性：根据解析结果更新 authInfo 对象的属性，包括 OrganizationIdWhere 和 OrganizationIdArgs，
-以及添加一个逻辑AND运算符 (OrganizationIdAnd) 以便后续可能的SQL查询构建。
-调用原函数 f：最后，将构建好的 authInfo 结构体传递给原始函数 f，连同HTTP响应写入器和请求对象一起传递。
+### 不建议直接在开源组件上修改代码
+原因有多个，主要涉及到维护性、兼容性和社区贡献等方面：
+1.维护性：如果你直接修改了一个开源项目的源代码，并基于这个修改后的版本构建了你的项目，
+那么当该开源项目发布新版本时，你将面临一个难题：如何将你的修改合并到新版本中。这可能会导致大量的重复工作和潜在的冲突。
+2.兼容性：直接修改开源组件可能导致其与其他系统或库的不兼容。开源项目通常会经过广泛的测试以确保稳定性，
+而未经充分测试的自定义修改可能破坏这种稳定性。
+3.安全更新：开源项目会定期接收安全修复和其他重要更新。如果你使用的是一个已经修改过的版本，那么你可能无法轻易应用这些更新，从而让你的应用程序处于风险之中。
+4.社区支持：当你遇到问题时，如果使用的是标准的、未修改的开源组件，更容易从社区获得帮助和支持。
+相反，如果你做了定制化改动，则可能需要自己解决问题，因为社区成员可能不了解或不愿意支持非官方版本。
+5.贡献回社区：如果你认为某些功能应该被添加到开源项目中，最好的做法是向该项目提交Pull Request（PR），
+让开发者团队审核并决定是否合并。这样做不仅可以使改进惠及更多人，而且一旦被接受，你就可以轻松地升级到包含你所需更改的新版本，而无需担心维护自己的分支。
